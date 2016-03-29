@@ -45,23 +45,25 @@ directoryForDB = directoryForDB + "/twitter.db"
 con = lite.connect(directoryForDB)
 with con:
     cur = con.cursor()
-    cur.execute("DROP TABLE IF EXISTS tweets")
-    cur.execute("CREATE TABLE tweets(user_id TEXT, screen_name TEXT, tweet_id TEXT, user_loc TEXT, hashtags TEXT, created_at TEXT, tweet_text TEXT)")
+    # cur.execute("DROP TABLE IF EXISTS tweets")
+    # cur.execute("CREATE TABLE tweets(user_id TEXT, screen_name TEXT, tweet_id TEXT, user_loc TEXT, hashtags TEXT, created_at TEXT, tweet_text TEXT)")
+    start = cur.execute("SELECT COUNT(*) FROM tweets")
+    start = start.fetchall()[0][0]
     while True:
     	try:
     	    r = api.request('statuses/filter', {'track': track_list})
     	    iterator = r.get_iterator()
-            total = 0
-            geo_enabled = 0
-            location = 0
-            correct_location = 0
+            total = start
+            geo_enabled = start
+            location = start
+            correct_location = start
     	    for tweet in iterator:
     	        if 'text' in tweet:
-                    total = total +1
+                    total = total + 1
                     if tweet['user']['geo_enabled']:
-                        geo_enabled = geo_enabled +1
+                        geo_enabled = geo_enabled + 1
                         if tweet['user']['location'] is not None:
-                            location = location +1
+                            location = location + 1
                             short_states = tweet['user']['location'][-2:]
                             if short_states in states.keys():
                                 correct_location = correct_location + 1
@@ -80,9 +82,10 @@ with con:
     	            event = tweet['disconnect']
     	            if event['code'] in [2, 5, 6, 7]:
                         logger.debug(event['reason']) 
-    	                raise Exception(event['reason'])  
+                        pass
+    	                # raise Exception(event['reason'])  
     	            else:
-                        information = """Disconnect[code = %d] at %s: %s, re-try request in 5 mins.""" % (event['code'], str(datetime.now()), event['reason'])
+                        information = "Disconnect[code = " + event['code'] + "] at " + str(datetime.now()) + ": " + event['reason'] + ", re-try request in 5 mins."
     	                print info
     	                time.sleep(300)
                         logger.info(information)
@@ -106,19 +109,20 @@ with con:
             else:
                 error_message = 'Success'
             if e.status_code < 500:
-                information = """%d at %s: %s, re-try request in 5 mins.""" % (e.status_code, str(datetime.now()), error_message)
+                information = str(e.status_code) + " at " + str(datetime.now()) + ": " + error_message + ", re-try request in 5 mins."
                 print information
                 time.sleep(300)
                 logger.debug(information) 
-                raise
+                pass
+                # raise
             else:
-                infomation = """%d at %s: %s, re-try request in 5 mins.""" % (e.status_code, str(datetime.now()), error_message)
+                information = str(e.status_code) + " at " + str(datetime.now()) + ": " + error_message + ", re-try request in 5 mins."
                 print information
                 time.sleep(600)
                 logger.debug(information)
                 pass
     	except TwitterConnectionError:
-            information = """%d at %s: Temporary interruption, re-try request in 5 mins.""" % (e.status_code, str(datetime.now()))
+            information = str(e.status_code) + " at " + str(datetime.now()) + ": Temporary interruption, re-try request in 5 mins."
     	    print information
     	    time.sleep(300)
             logger.debug(information)
