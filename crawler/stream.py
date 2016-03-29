@@ -4,23 +4,29 @@ import sqlite3 as lite
 import urllib
 import os
 from datetime import datetime
+import time
 import logging  
 
-logger = logging.getLogger('mylogger')  
-logger.setLevel(logging.DEBUG)  
-  
-fh = logging.FileHandler('test.log')  
-fh.setLevel(logging.DEBUG)  
-   
-ch = logging.StreamHandler()  
-ch.setLevel(logging.DEBUG)  
 
-formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s')  
-fh.setFormatter(formatter)  
-ch.setFormatter(formatter)  
-  
-logger.addHandler(fh)  
-logger.addHandler(ch)  
+def configLogger():
+    logger = logging.getLogger('mylogger')  
+    logger.setLevel(logging.DEBUG)  
+      
+    fh = logging.FileHandler('debugger.log')  
+    fh.setLevel(logging.DEBUG)  
+       
+    ch = logging.StreamHandler()  
+    ch.setLevel(logging.DEBUG)  
+    
+    formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s')  
+    fh.setFormatter(formatter)  
+    ch.setFormatter(formatter)  
+      
+    logger.addHandler(fh)  
+    logger.addHandler(ch)  
+    return logger
+
+logger = configLogger()
 
 with open('./config.json') as config_file:
     config = json.load(config_file)
@@ -69,7 +75,7 @@ with con:
                                 correct_location = correct_location + 1
                                 length = len(tweet['entities']['hashtags'])
                                 hashtags = ""
-                                if  length != 0:
+                                if length != 0:
                                     for index in range(length):
                                         hashtags = hashtags + tweet['entities']['hashtags'][index]['text'] + ","
                                     hashtags = hashtags[:-1]
@@ -81,15 +87,14 @@ with con:
     	        elif 'disconnect' in tweet:
     	            event = tweet['disconnect']
     	            if event['code'] in [2, 5, 6, 7]:
-                        logger.debug(event['reason']) 
-                        pass
-    	                # raise Exception(event['reason'])  
+                        logger.debug("Disconnect[code = " + event['code'] + "] at " + str(datetime.now()) + ": " + event['reason'] + ".") 
+                        continue 
     	            else:
                         information = "Disconnect[code = " + event['code'] + "] at " + str(datetime.now()) + ": " + event['reason'] + ", re-try request in 5 mins."
-    	                print info
-    	                time.sleep(300)
                         logger.info(information)
-    	                break
+    	                print information
+    	                time.sleep(300)
+    	                continue
     	except TwitterRequestError as e:
             error_message = ''
             if e.status_code == 403:
@@ -110,21 +115,20 @@ with con:
                 error_message = 'Success'
             if e.status_code < 500:
                 information = str(e.status_code) + " at " + str(datetime.now()) + ": " + error_message + ", re-try request in 5 mins."
+                logger.debug(information) 
                 print information
                 time.sleep(300)
-                logger.debug(information) 
-                pass
-                # raise
+                continue
             else:
-                information = str(e.status_code) + " at " + str(datetime.now()) + ": " + error_message + ", re-try request in 5 mins."
+                information = str(e.status_code) + " at " + str(datetime.now()) + ": " + error_message + ", re-try request in 10 mins."
+                logger.debug(information)
                 print information
                 time.sleep(600)
-                logger.debug(information)
-                pass
-    	except TwitterConnectionError:
-            information = str(e.status_code) + " at " + str(datetime.now()) + ": Temporary interruption, re-try request in 5 mins."
+                continue
+    	except TwitterConnectionError as e:
+            information = str(e.status_code) + " at " + str(datetime.now()) + ": Temporary interruption, re-try request in 5 mins."            
+            logger.debug(information)
     	    print information
     	    time.sleep(300)
-            logger.debug(information)
-    	    pass
+            continue
 con.close()
