@@ -118,17 +118,17 @@ with con:
                 logger.debug(information) 
                 print information
                 time.sleep(300)
-                continue
+                raise
             else:
                 information = str(e.status_code) + " at " + str(datetime.now()) + ": " + error_message + ", re-try request in 10 mins."
                 logger.debug(information)
                 print information
                 time.sleep(600)
-                continue
+                pass
     	except TwitterConnectionError as e:
-            information = str(e.status_code) + " at " + str(datetime.now()) + ": Temporary interruption, re-try request in 5 mins."            
+            information = "TwitterConnectionError at " + str(datetime.now()) + ": Temporary interruption, re-try request in 5 mins."            
             logger.debug(information)
     	    print information
     	    time.sleep(300)
-            continue
+            pass
 con.close()
