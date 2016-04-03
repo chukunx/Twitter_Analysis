@@ -2,11 +2,15 @@ from TwitterAPI import TwitterAPI, TwitterRequestError, TwitterConnectionError
 import json
 import sqlite3 as lite
 import urllib
-import os
+import os,sys
 from datetime import datetime
 import time
 import logging  
+from contextlib import nested
 
+# encoding problem
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 def configLogger():
     logger = logging.getLogger('mylogger')  
@@ -44,15 +48,21 @@ states = {}
 states = params['states']
 
 directoryForDB = "./data"
+directoryForHB = "./data/csv"
 if not os.path.exists(directoryForDB):  # create a new one if it is not exist
     os.makedirs(directoryForDB)
+if not os.path.exists(directoryForHB):  # create a new one if it is not exist
+    os.makedirs(directoryForHB)
 
-directoryForDB = directoryForDB + "/twitter.db"
-con = lite.connect(directoryForDB)
-with con:
+fileName = "/twitter_part2"
+
+DB = directoryForDB + fileName + ".db"
+HB = directoryForHB + fileName + ".csv"
+
+with nested(lite.connect(DB), open(HB, "a")) as (con, hb):
     cur = con.cursor()
     # cur.execute("DROP TABLE IF EXISTS tweets")
-    # cur.execute("CREATE TABLE tweets(user_id TEXT, screen_name TEXT, tweet_id TEXT, user_loc TEXT, hashtags TEXT, created_at TEXT, tweet_text TEXT)")
+    cur.execute("CREATE TABLE tweets(user_id TEXT, screen_name TEXT, tweet_id TEXT, user_loc TEXT, hashtags TEXT, created_at TEXT, tweet_text TEXT)")
     start = cur.execute("SELECT COUNT(*) FROM tweets")
     start = start.fetchall()[0][0]
     while True:
@@ -83,6 +93,8 @@ with con:
     	                        insert_stat = 'INSERT INTO tweets VALUES(?,?,?,?,?,?,?)'
     	                        parms = (tweet['user']['id_str'], tweet['user']['screen_name'], tweet['id_str'], tweet['user']['location'], hashtags ,tweet['created_at'], tweet['text'].replace("\n",""))
     	                        cur.execute(insert_stat, parms)
+                                hb.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % parms)
+                                hb.flush()
     	                        con.commit()
     	        elif 'disconnect' in tweet:
     	            event = tweet['disconnect']
