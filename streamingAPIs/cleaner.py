@@ -20,20 +20,27 @@ outputFile = "twitter_part1.input"
 with nested(open(outputPath + outputFile, "w+"), open(dataPath + dataFile, "r")) as (out, csvfile):
     # user_Id, screen_name, tweet_id, user_loc, hashtags, created_at, tweet_text
     tweets = csv.reader(csvfile, delimiter='\t')
+    total = 0
     count = 0
     ommited = 0
+    urlOnly = 0
     for tweet in tweets:
+        total = total + 1
         if(len(tweet) == 7):
             tweet_text = tweet[6]
             found = re.findall(r"http\S+", tweet_text)
             if(len(found)!=0):
                 sentence = re.sub(r"http\S+", 'ulr_replmt', tweet_text)
-                ## full output
-                out.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (tweet[0],tweet[1],tweet[2],tweet[3],tweet[4],tweet[5],sentence.decode('utf8')))
-                ## user_id, tweet_id, tweets
-                # out.write("%s\t%s\t%s\n" % (tweet[0],tweet[2],sentence.decode('utf8')))
-                ## log to screen
-                print """%d, %d, %s, %s""" % (count, ommited, ','.join(found), tweet[1])
-            count = count + 1
+                if(sentence.strip() == ""):
+                    urlOnly = urlOnly + 1
+                    continue
+                else:
+                    count = count + 1
+                    ## full output
+                    out.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (tweet[0],tweet[1],tweet[2],tweet[3],tweet[4],tweet[5],sentence.decode('utf8')))
+                    ## user_id, tweet_id, tweets
+                    # out.write("%s\t%s\t%s\n" % (tweet[0],tweet[2],sentence.decode('utf8')))
+                    ## log to screen
+                    print """%d, %d, %d, %d, %s, %s""" % (total, count, urlOnly, ommited, ','.join(found), tweet[1])
         else:
             ommited = ommited + 1
