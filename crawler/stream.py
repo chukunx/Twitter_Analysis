@@ -54,7 +54,7 @@ if not os.path.exists(directoryForDB):  # create a new one if it is not exist
 if not os.path.exists(directoryForHB):  # create a new one if it is not exist
     os.makedirs(directoryForHB)
 
-fileName = "/twitter_part2"
+fileName = "/twitter_part3"
 
 DB = directoryForDB + fileName + ".db"
 HB = directoryForHB + fileName + ".csv"

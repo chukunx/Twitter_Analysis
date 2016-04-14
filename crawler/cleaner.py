@@ -28,6 +28,8 @@ with nested(open(outputPath + outputFile, "w+"), open(dataPath + dataFile, "r"))
         total = total + 1
         if(len(tweet) == 7):
             tweet_text = tweet[6]
+            tweet_text = re.sub(r"^RT ", "", tweet_text)
+            tweet_text = re.sub(r"^@[A-Za-z0-9_]{1,15}: ", "", tweet_text)
             found = re.findall(r"http\S+", tweet_text)
             if(len(found)!=0):
                 sentence = re.sub(r"http\S+", 'ulr_replmt', tweet_text)
@@ -42,5 +44,6 @@ with nested(open(outputPath + outputFile, "w+"), open(dataPath + dataFile, "r"))
                     # out.write("%s\t%s\t%s\n" % (tweet[0],tweet[2],sentence.decode('utf8')))
                     ## log to screen
                     print """%d, %d, %d, %d, %s, %s""" % (total, count, urlOnly, ommited, ','.join(found), tweet[1])
+
         else:
             ommited = ommited + 1
